@@ -11,7 +11,7 @@
 
 Welcome to the **Solo Leveling Habit Tracker**, a gamified productivity application inspired by the "System" interface from the hit manhwa/anime *Solo Leveling*.
 
-This application turns your daily life into a RPG. Instead of boring to-do lists, you complete **"Daily Quests"** to earn **XP**, maintain your **HP (Health)**, and raise your **Rank** from an E-Rank weakling to a National Level Hunter.
+This application turns your daily life into a RPG. Instead of boring to-do lists, you complete **"Daily Quests"** to earn **XP**, maintain your **HP (Health)**, and raise your **Rank** from an E-Rank weakling to The Monarch.
 
 Currently, the project features the core design structure, UI/UX, and database connectivity, hosted live on **PythonAnywhere**.
 
@@ -27,7 +27,7 @@ Currently, the project features the core design structure, UI/UX, and database c
 ### 🏆 Gamification Mechanics
 - **Ranking System:**
   - Start as **E-Rank**.
-  - Grind XP to promote to **D, C, B, A, S**, and finally **National Level Hunter**.
+  - Grind XP to promote to **D, C, B, A, S**, and finally **The Monarch**.
 - **Streaks:**
   - **Individual Streak:** Track consistency for specific habits.
   - **Overall Streak:** Your total days of perfect "Daily Quest" completion.
