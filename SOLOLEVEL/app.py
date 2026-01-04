@@ -60,18 +60,24 @@ def register():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
+        confirm_password = request.form.get('confirm_password')  # <--- NEW FIELD
         
         # 1. Check Username Length
         if len(username) < 5:
             flash('Username must be at least 5 characters.')
             return redirect(url_for('register'))
 
-        # 2. Check Password Special Char
+        # 2. Check Password Matching <--- NEW CHECK
+        if password != confirm_password:
+            flash('Passwords do not match.')
+            return redirect(url_for('register'))
+
+        # 3. Check Password Special Char
         if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
             flash('Password must contain at least one special character (!@#$).')
             return redirect(url_for('register'))
 
-        # 3. Check if Username Taken
+        # 4. Check if Username Taken
         exists = User.query.filter_by(username=username).first()
         if exists:
             flash('Username already taken. Choose another.')
@@ -85,6 +91,7 @@ def register():
         flash('Account Created! Please Login.')
         return redirect(url_for('login'))
     return render_template('register.html')
+
 
 @app.route('/dashboard')
 @login_required
