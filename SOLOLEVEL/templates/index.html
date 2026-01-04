@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SOLOLEVEL SYSTEM</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* --- CORE RESETS --- */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        :root {
+            /* SYSTEM THEME */
+            --bg: #050505;
+            --surface: #0a0a0f;
+            --surface-2: #12121a;
+            --primary: #00f2ff;
+            --primary-dim: rgba(0, 242, 255, 0.1);
+            --secondary: #7000ff;
+            --text-main: #e0f7ff;
+            --text-sub: #5a6b7c;
+            --border: #1f293a;
+            --success: #00ff9d;
+            --warning: #ffbf00;
+            --danger: #ff0055;
+            --shadow: 0 0 20px rgba(0, 242, 255, 0.05);
+            --git-1: #0e4429; --git-2: #006d32; --git-3: #26a641; --git-4: #39d353;
+        }
+
+        body.light-mode {
+            --bg: #f8fafc; --surface: #ffffff; --surface-2: #f1f5f9;
+            --primary: #2563eb; --primary-dim: #dbeafe; --secondary: #4f46e5;
+            --text-main: #0f172a; --text-sub: #64748b; --border: #e2e8f0;
+            --success: #10b981; --warning: #f59e0b; --danger: #ef4444;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+            --git-1: #bbf7d0; --git-2: #86efac; --git-3: #4ade80; --git-4: #16a34a;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Roboto', monospace;
+            background: var(--bg); color: var(--text-main);
+            margin: 0; padding: 20px; transition: all 0.3s ease;
+            overflow-x: hidden; 
+        }
+
+        .container { max-width: 1400px; margin: 0 auto; padding-bottom: 50px; width: 100%; }
+
+        /* --- HEADER --- */
+        header {
+            background: var(--surface); padding: 20px;
+            border-radius: 12px; border: 1px solid var(--border);
+            margin-bottom: 20px; box-shadow: var(--shadow);
+            position: relative; overflow: hidden; width: 100%;
+        }
+        header::after { content:''; position: absolute; top:0; left:0; width:100%; height:2px; background: linear-gradient(90deg, var(--secondary), var(--primary)); }
+
+        .hud-grid { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 20px; }
+        .player-info h1 { margin: 0; font-size: 1rem; letter-spacing: 2px; text-transform: uppercase; color: var(--text-sub); }
+        .player-rank { font-size: 2rem; font-weight: 800; color: var(--text-main); line-height: 1; text-shadow: 0 0 10px var(--primary-dim); }
+
+        .xp-bar-container { width: 100%; max-width: 400px; }
+        .xp-text { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--primary); margin-bottom: 5px; font-weight: bold; }
+        .xp-track { width: 100%; height: 6px; background: var(--surface-2); border-radius: 4px; overflow: hidden; border: 1px solid var(--border); }
+        .xp-fill { height: 100%; background: linear-gradient(90deg, var(--secondary), var(--primary)); width: 0%; transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 0 10px var(--primary); }
+
+        .hp-display { text-align: right; }
+        .streak-counter { color: var(--primary); font-weight: 800; font-size: 1rem; margin-left: 5px; }
+        .hp-track { width: 120px; height: 8px; background: var(--surface-2); border-radius: 2px; overflow: hidden; border: 1px solid var(--border); display: inline-block; margin-top: 5px; position: relative;}
+        .hp-fill { height: 100%; background: var(--success); width: 100%; transition: width 0.5s ease, background-color 0.5s ease; box-shadow: 0 0 8px var(--success); }
+        .hp-fill.safe { background: var(--success); box-shadow: 0 0 8px var(--success); }
+        .hp-fill.warning { background: var(--warning); box-shadow: 0 0 8px var(--warning); }
+        .hp-fill.danger { background: var(--danger); box-shadow: 0 0 8px var(--danger); }
+
+        .controls { display: flex; justify-content: center; gap: 10px; margin-top: 15px; border-top: 1px solid var(--border); padding-top: 15px; flex-wrap: wrap; }
+        button {
+            padding: 8px 14px; border-radius: 6px; border: 1px solid var(--border);
+            background: var(--surface-2); color: var(--text-main); cursor: pointer;
+            font-weight: 600; transition: all 0.2s; font-family: monospace; font-size: 0.8rem;
+        }
+        button:hover { background: var(--border); color: var(--primary); border-color: var(--primary); }
+        .btn-main { border-color: var(--primary); color: var(--primary); }
+        .btn-main:hover { background: var(--primary); color: #000; }
+        .btn-danger { border-color: var(--danger); color: var(--danger); }
+        .btn-danger:hover { background: var(--danger); color: white; }
+
+        /* --- HABIT GRID --- */
+        .tracker-card { background: var(--surface); border-radius: 12px; border: 1px solid var(--border); overflow: hidden; margin-bottom: 20px; box-shadow: var(--shadow); width: 100%; }
+        .tracker-inner { display: grid; grid-template-columns: 150px 1fr; overflow-x: auto; scrollbar-width: thin; width: 100%; }
+        .habit-col { background: var(--surface); border-right: 1px solid var(--border); z-index: 10; position: sticky; left: 0; min-width: 150px; }
+        .habit-header { height: 45px; padding: 0 10px; display: flex; align-items: center; font-weight: bold; color: var(--primary); border-bottom: 1px solid var(--border); letter-spacing: 1px; font-size: 0.75rem; }
+        
+        .habit-item { 
+            height: 45px; padding: 0 10px; 
+            display: grid; grid-template-columns: 1fr 30px; align-items: center; 
+            border-bottom: 1px solid var(--border); font-weight: 500; font-size: 0.85rem; gap: 5px;
+        }
+        .habit-info { min-width: 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
+        .habit-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .habit-meta { font-size: 0.65rem; color: var(--text-sub); display: flex; align-items: center; gap: 8px; margin-top: 2px; }
+        .mini-streak { color: var(--warning); font-weight: bold; }
+        .del-btn { 
+            opacity: 0; color: var(--danger); background: none; 
+            border: 1px solid var(--border); border-radius: 4px; 
+            font-size: 1rem; cursor: pointer; padding: 0; height: 24px; width: 24px; display: flex; align-items: center; justify-content: center; transition: opacity 0.2s; 
+        }
+        .habit-item:hover .del-btn { opacity: 1; }
+
+        /* Days Grid */
+        .days-row { display: flex; height: 45px; border-bottom: 1px solid var(--border); }
+        .day-header { min-width: 40px; border-right: 1px solid var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.65rem; color: var(--text-sub); cursor: pointer; transition: background 0.2s; }
+        .day-header:hover { background: var(--surface-2); }
+        .day-header.is-active { background: var(--primary-dim); color: var(--primary); border-bottom: 2px solid var(--primary); }
+        .day-header.is-today { color: var(--secondary); font-weight: bold; } 
+
+        .check-row { display: flex; height: 45px; border-bottom: 1px solid var(--border); }
+        .check-cell { min-width: 40px; border-right: 1px solid var(--border); display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.1s; }
+        .check-cell:hover { background: rgba(255,255,255,0.05); }
+        .check-cell.is-active { background: rgba(0, 242, 255, 0.03); }
+
+        .checkbox { width: 18px; height: 18px; border-radius: 3px; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; color: transparent; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .check-cell.active .checkbox { background: var(--primary); border-color: var(--primary); color: #000; box-shadow: 0 0 10px var(--primary); transform: scale(1.1); }
+        body.dark-mode .checkbox { border-color: #334155; }
+
+        /* --- DASHBOARD --- */
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; margin-bottom: 30px; width: 100%; }
+        .stat-card { 
+            background: var(--surface); padding: 20px; 
+            border-radius: 12px; border: 1px solid var(--border); 
+            box-shadow: var(--shadow); position: relative; min-width: 0; width: 100%;
+        }
+        .stat-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+        .stat-title { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-sub); margin: 0; }
+        .span-1 { grid-column: span 1; } .span-2 { grid-column: span 2; } .span-4 { grid-column: span 4; }
+
+        .chart-wrapper { position: relative; height: 200px; width: 100%; display: flex; justify-content: center; }
+        .chart-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; pointer-events: none; }
+        .chart-value { font-size: 1.8rem; font-weight: 800; color: var(--text-main); line-height: 1; text-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        .chart-label { font-size: 0.65rem; color: var(--primary); margin-top: 5px; letter-spacing: 1px; }
+
+        .input-group { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+        input { flex: 1; padding: 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); color: var(--text-main); font-family: monospace; min-width: 150px; }
+        input:focus { outline: 1px solid var(--primary); border-color: var(--primary); }
+        select { padding: 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text-main); font-family: monospace; cursor: pointer; }
+        select:focus { outline: none; border-color: var(--primary); }
+
+        .heatmap-grid { display: grid; grid-template-columns: repeat(53, 1fr); gap: 2px; overflow-x: auto; padding-bottom: 5px; }
+        .heat-cell { aspect-ratio: 1; border-radius: 1px; background: var(--surface-2); }
+        .heat-cell[data-l="1"] { background: var(--git-1); }
+        .heat-cell[data-l="2"] { background: var(--git-2); }
+        .heat-cell[data-l="3"] { background: var(--git-3); }
+        .heat-cell[data-l="4"] { background: var(--git-4); box-shadow: 0 0 5px var(--git-4); }
+
+        #fileInput { display: none; }
+        .chart-select { padding: 4px 8px; font-size: 0.7rem; border-radius: 4px; border: 1px solid var(--border); background: var(--bg); color: var(--text-main); font-family: monospace; }
+
+        /* --- MOBILE OPTIMIZATION --- */
+        @media (max-width: 900px) { .stats-grid { grid-template-columns: 1fr; } .span-1, .span-2, .span-4 { grid-column: span 1; } }
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .container { padding-bottom: 40px; }
+            .hud-grid { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+            .player-info { grid-column: span 2; text-align: center; border-bottom: 1px solid var(--border); padding-bottom: 10px; }
+            .xp-bar-container { grid-column: span 2; }
+            .hp-display { grid-column: span 2; display: flex; justify-content: space-between; align-items: center; }
+            .controls { gap: 5px; }
+            .controls button { flex: 1; padding: 10px 0; font-size: 0.7rem; }
+            #dateDisplay { width: 100%; order: -1; margin-bottom: 5px; font-size: 0.9rem; }
+            .tracker-inner { grid-template-columns: 120px 1fr; }
+            .habit-col { min-width: 120px; }
+            .habit-header, .habit-item { padding: 0 8px; font-size: 0.75rem; }
+            .del-btn { opacity: 1; border-color: var(--surface-2); }
+            .input-group { flex-direction: column; gap: 8px; }
+            .input-group input, .input-group select, .input-group button { width: 100%; }
+            .chart-wrapper { height: 180px; }
+            .stat-card { padding: 15px; }
+        }
+    </style>
+</head>
+<body class="dark-mode">
+
+<div class="container">
+    <header>
+        <div class="hud-grid">
+            <div class="player-info">
+                <h1>Player Profile</h1>
+                <div class="player-rank" id="playerRank">E-RANK</div>
+                <div style="font-size: 0.8rem; color:var(--text-sub);">Level <span id="levelNum">1</span></div>
+            </div>
+            
+            <div class="xp-bar-container">
+                <div class="xp-text"><span>XP</span><span id="xpDisplay">0 / 100</span></div>
+                <div class="xp-track"><div class="xp-fill" id="xpBar"></div></div>
+            </div>
+
+            <div class="hp-display">
+                <div class="hp-label">STREAK: <span id="overallStreakDisplay" class="streak-counter">0</span></div>
+                <div style="display:flex; align-items:center; justify-content: flex-end;">
+                    <div style="font-size:0.7rem; margin-right:8px; color:var(--text-sub);">HP</div>
+                    <div class="hp-track"><div class="hp-fill safe" id="hpBar"></div></div>
+                    <div style="font-weight:bold; margin-left:10px; font-size:0.8rem;" id="hpText">100%</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button onclick="changeMonth(-1)">◀</button>
+            <span id="dateDisplay" style="font-weight:bold; min-width:120px; text-align:center; display:flex; align-items:center; justify-content:center;">DATE</span>
+            <button onclick="changeMonth(1)">▶</button>
+            
+            <button class="btn-main" onclick="downloadData()">BACKUP</button>
+            <button onclick="document.getElementById('fileInput').click()">RESTORE</button>
+            <input type="file" id="fileInput" accept=".json" onchange="importData(this)">
+            <button onclick="toggleTheme()">THEME</button>
+            <button class="btn-danger" onclick="logout()">LOGOUT</button>
+        </div>
+    </header>
+
+    <div class="tracker-card">
+        <div class="tracker-inner">
+            <div class="habit-col">
+                <div class="habit-header">QUESTS</div>
+                <div id="habitList"></div>
+            </div>
+            <div class="calendar-area">
+                <div class="days-row" id="daysHeader"></div>
+                <div id="gridRows"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="input-group">
+        <input type="text" id="newHabitInput" placeholder="New quest name..." onkeypress="if(event.key==='Enter') addHabit()">
+        <select id="newHabitDiff">
+            <option value="1">Easy (1x)</option>
+            <option value="1.5">Medium (1.5x)</option>
+            <option value="2">Hard (2x)</option>
+            <option value="3">Epic (3x)</option>
+        </select>
+        <button class="btn-add" onclick="addHabit()" style="background:var(--primary); color:black; border:none; font-weight:bold;">ADD</button>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card span-1">
+            <div class="stat-header"><div class="stat-title">DAILY</div></div>
+            <div class="chart-wrapper">
+                <canvas id="dailyPie"></canvas>
+                <div class="chart-overlay"><div class="chart-value" id="dailyText">0/0</div><div class="chart-label">TASKS</div></div>
+            </div>
+        </div>
+        <div class="stat-card span-1">
+            <div class="stat-header"><div class="stat-title">WEEKLY</div></div>
+            <div class="chart-wrapper">
+                <canvas id="weeklyPie"></canvas>
+                <div class="chart-overlay"><div class="chart-value" id="weeklyText">0%</div><div class="chart-label">RATE</div></div>
+            </div>
+        </div>
+        <div class="stat-card span-2">
+            <div class="stat-header"><div class="stat-title">LIFETIME vs STREAK</div></div>
+            <div class="chart-wrapper"><canvas id="barChart"></canvas></div>
+        </div>
+        <div class="stat-card span-4">
+            <div class="stat-header">
+                <div class="stat-title">PERFORMANCE HISTORY</div>
+                <select class="chart-select" onchange="updateLineRange(this.value)">
+                    <option value="7">1 Week</option>
+                    <option value="30">1 Month</option>
+                    <option value="90">3 Months</option>
+                    <option value="180">6 Months</option>
+                    <option value="365">1 Year</option>
+                </select>
+            </div>
+            <div class="chart-wrapper"><canvas id="lineChart"></canvas></div>
+        </div>
+        <div class="stat-card span-4">
+            <div class="stat-header"><div class="stat-title">ACTIVITY LOG</div></div>
+            <div class="heatmap-grid" id="heatmap"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- 1. SYSTEM CONFIG ---
+    const getDateKey = (date) => date.toLocaleDateString('en-CA');
+    let currentDate = new Date();
+    let activeDateKey = getDateKey(new Date());
+    let chartDaysRange = 7; 
+
+    // --- SOUND ENGINE (Day-Specific Combo) ---
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playSound(type, dateKey) {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        
+        if (type === 'untick') {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.type = 'sine'; osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.15);
+            gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.15);
+            return;
+        }
+
+        if (type === 'tick') {
+            const targetDate = dateKey || activeDateKey; 
+            let count = 0;
+            state.habits.forEach(h => { if (state.records[`${h.id}_${targetDate}`]) count++; });
+            
+            // Map count to sound file (1-5)
+            let soundNum = Math.min(Math.max(count, 1), 5);
+            // Use the static path for Flask
+            const audio = new Audio(`/static/sound${soundNum}.mp3`);
+            audio.play().catch(e => console.log("Sound play error:", e));
+        }
+    }
+
+    // Default State
+    let state = {
+        habits: [{id:1, name:"Daily Workout", diff:2}, {id:2, name:"Read Grimoire", diff:1.5}],
+        records: {},
+        user: { xp: 0, hp: 100, lastLogin: null, currentStreak: 0 },
+        isDark: true
+    };
+
+    let charts = {};
+
+    // --- CLOUD SYNC LOGIC ---
+    async function loadData() {
+        try {
+            const response = await fetch('/api/data');
+            if (response.ok) {
+                const serverData = await response.json();
+                if (serverData && serverData.habits) {
+                    state = serverData;
+                    // Sync local storage as backup
+                    localStorage.setItem('lifeos_v31_data', JSON.stringify(state));
+                }
+            }
+        } catch (e) {
+            console.log("Using Local Backup:", e);
+            const saved = localStorage.getItem('lifeos_v31_data');
+            if(saved) state = JSON.parse(saved);
+        }
+        
+        if(!state.isDark) document.body.classList.add('light-mode');
+        else document.body.classList.remove('light-mode');
+        
+        checkStreakHealth();
+        renderHeader();
+        renderGrid();
+        calculatePlayerStats();
+        renderHeatmap();
+        
+        setTimeout(() => {
+            const activeEl = document.querySelector('.day-header.is-active');
+            if(activeEl) activeEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        }, 300);
+    }
+
+    function saveData() {
+        // Save Local
+        localStorage.setItem('lifeos_v31_data', JSON.stringify(state));
+        
+        // Save Cloud
+        fetch('/api/data', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(state)
+        }).catch(err => console.error("Save failed:", err));
+
+        calculatePlayerStats(); 
+        renderHeatmap();
+    }
+
+    function init() {
+        loadData();
+    }
+
+    // --- LOGOUT LOGIC ---
+    function logout() {
+        if(confirm("LOGOUT SYSTEM? Cloud save active.")) {
+            localStorage.removeItem('lifeos_v31_data');
+            window.location.href = "/logout";
+        }
+    }
+
+    // --- CORE LOGIC ---
+    function checkStreakHealth() {
+        const today = getDateKey(new Date());
+        if (state.user.lastLogin === today) return;
+
+        if (state.user.lastLogin) {
+            const lastDate = new Date(state.user.lastLogin);
+            const todayDate = new Date();
+            const diffTime = Math.abs(todayDate - lastDate);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) - 1; 
+            
+            if (diffDays > 0) {
+                state.user.hp = Math.max(0, state.user.hp - (diffDays * 30));
+            }
+        } else { state.user.hp = 100; }
+        
+        if(state.user.hp === 0) state.user.currentStreak = 0;
+
+        state.user.lastLogin = today;
+        saveData();
+    }
+
+    function calculateIndividualStreak(habitId) {
+        const dates = Object.keys(state.records)
+            .filter(k => k.startsWith(`${habitId}_`))
+            .map(k => k.split('_')[1])
+            .sort((a, b) => new Date(b) - new Date(a));
+
+        if (dates.length === 0) return 0;
+
+        const today = new Date(); today.setHours(0,0,0,0);
+        const latestCheck = new Date(dates[0]); latestCheck.setHours(0,0,0,0);
+        const diffTime = today - latestCheck;
+        const diffDays = diffTime / (1000 * 60 * 60 * 24);
+
+        if (diffDays > 1) return 0;
+
+        let streak = 1;
+        for (let i = 0; i < dates.length - 1; i++) {
+            const current = new Date(dates[i]);
+            const prev = new Date(dates[i+1]);
+            const d = (current - prev) / (1000 * 60 * 60 * 24);
+            if (Math.round(d) === 1) streak++; else break;
+        }
+        return streak;
+    }
+    
+    function calculateLifetimeTotal(habitId) {
+        let count = 0;
+        const keys = Object.keys(state.records);
+        keys.forEach(key => { if(key.startsWith(`${habitId}_`)) count++; });
+        return count;
+    }
+
+    function calculateOverallStreak() {
+        let streak = 0;
+        let d = new Date(); d.setHours(12, 0, 0, 0);
+        let key = getDateKey(d);
+        let active = state.habits.some(h => state.records[`${h.id}_${key}`]);
+        if(active) streak++;
+
+        for(let i=0; i<365; i++) {
+            d.setDate(d.getDate() - 1);
+            key = getDateKey(d);
+            active = state.habits.some(h => state.records[`${h.id}_${key}`]);
+            if(active) streak++; else break;
+        }
+        return streak;
+    }
+
+    function calculatePlayerStats() {
+        let level = Math.floor(Math.sqrt(state.user.xp / 100)) + 1; 
+        let xpForCurrent = 100 * Math.pow(level-1, 2);
+        let xpForNext = 100 * Math.pow(level, 2);
+        let progress = ((state.user.xp - xpForCurrent) / (xpForNext - xpForCurrent)) * 100;
+        
+        document.getElementById('levelNum').innerText = level;
+        document.getElementById('xpDisplay').innerText = `${Math.floor(state.user.xp)} XP`;
+        document.getElementById('xpBar').style.width = `${Math.max(0, Math.min(100, progress))}%`;
+
+        const ranks = ["E", "D", "C", "B", "A", "S", "The Monarch"];
+        let rankIndex = Math.min(Math.floor(level / 5), ranks.length - 1);
+        document.getElementById('playerRank').innerText = ranks[rankIndex] + "-RANK";
+
+        const hpBar = document.getElementById('hpBar');
+        hpBar.style.width = `${state.user.hp}%`;
+        document.getElementById('hpText').innerText = `${state.user.hp}%`;
+        hpBar.className = 'hp-fill';
+        if(state.user.hp > 50) hpBar.classList.add('safe');
+        else if(state.user.hp > 20) hpBar.classList.add('warning');
+        else hpBar.classList.add('danger');
+
+        const overallStreak = calculateOverallStreak();
+        document.getElementById('overallStreakDisplay').innerText = `${overallStreak}`;
+        state.user.currentStreak = overallStreak;
+
+        // Note: saveData() calls renderStats & renderHeatmap, so we don't duplicate calls here
+        // But if called separately, ensure charts update
+        if(document.getElementById('dailyPie')) renderStats();
+    }
+
+    // --- EVENT HELPERS ---
+    function toggleTheme() {
+        state.isDark = !state.isDark;
+        saveData();
+        if(!state.isDark) document.body.classList.add('light-mode');
+        else document.body.classList.remove('light-mode');
+        renderStats();
+    }
+
+    function setActiveDate(key) {
+        activeDateKey = key;
+        renderGrid(); renderStats(); 
+    }
+
+    function changeMonth(n) {
+        const currentMonth = currentDate.getMonth();
+        currentDate.setDate(1); currentDate.setMonth(currentMonth + n);
+        renderHeader(); renderGrid(); renderStats();
+    }
+
+    function updateLineRange(val) {
+        chartDaysRange = parseInt(val);
+        renderStats();
+    }
+
+    function downloadData() {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state));
+        const el = document.createElement('a');
+        el.setAttribute("href", dataStr); el.setAttribute("download", "lifeos_data.json");
+        document.body.appendChild(el); el.click(); el.remove();
+    }
+
+    function importData(input) {
+        const file = input.files[0];
+        if(!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                state = JSON.parse(e.target.result);
+                saveData(); renderGrid(); init(); alert("Restored.");
+            } catch(err) { alert("Error."); }
+        };
+        reader.readAsText(file);
+    }
+
+    // --- RENDERERS ---
+    function renderHeader() { document.getElementById('dateDisplay').innerText = currentDate.toLocaleDateString('en-US', {month:'short', year:'2-digit'}); }
+
+    function renderGrid() {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+        const days = new Date(year, month+1, 0).getDate();
+        const header = document.getElementById('daysHeader');
+        header.innerHTML = '';
+        for(let d=1; d<=days; d++) {
+            const date = new Date(year, month, d);
+            const key = getDateKey(date);
+            const name = date.toLocaleDateString('en-US', {weekday:'narrow'});
+            const isActive = key === activeDateKey;
+            const isToday = key === getDateKey(new Date());
+            const el = document.createElement('div');
+            el.className = `day-header ${isActive ? 'is-active' : ''} ${isToday ? 'is-today' : ''}`;
+            el.innerHTML = `<span>${name}</span><b>${d}</b>`;
+            el.onclick = () => setActiveDate(key);
+            header.appendChild(el);
+        }
+
+        const list = document.getElementById('habitList');
+        const rows = document.getElementById('gridRows');
+        list.innerHTML = ''; rows.innerHTML = '';
+
+        state.habits.forEach(h => {
+            const indStreak = calculateIndividualStreak(h.id);
+            const li = document.createElement('div');
+            li.className = 'habit-item';
+            li.innerHTML = `
+                <div class="habit-info">
+                    <div class="habit-name">${h.name}</div>
+                    <div class="habit-meta"><span class="mini-streak">🔥 ${indStreak}</span><span>x${h.diff}</span></div>
+                </div>
+                <div class="del-btn" onclick="delHabit(${h.id})">×</div>
+            `;
+            list.appendChild(li);
+
+            const row = document.createElement('div');
+            row.className = 'check-row';
+            for(let d=1; d<=days; d++) {
+                const date = new Date(year, month, d);
+                const key = getDateKey(date);
+                const checked = state.records[`${h.id}_${key}`];
+                const isActive = key === activeDateKey;
+                const cell = document.createElement('div');
+                cell.className = `check-cell ${checked ? 'active' : ''} ${isActive ? 'is-active' : ''}`;
+                cell.onclick = () => toggle(h.id, key);
+                cell.innerHTML = `<div class="checkbox">✓</div>`;
+                row.appendChild(cell);
+            }
+            rows.appendChild(row);
+        });
+    }
+
+    function toggle(id, key) {
+        const k = `${id}_${key}`;
+        const habit = state.habits.find(h => h.id === id);
+        const diff = habit.diff || 1; 
+
+        if(state.records[k]) {
+            // UNCHECK
+            const streak = calculateIndividualStreak(id);
+            const multiplier = 1 + (Math.log(streak + 1) * 0.5); 
+            const xpLoss = 10 * diff * multiplier;
+            state.user.xp = Math.max(0, state.user.xp - xpLoss);
+            state.user.hp = Math.max(0, state.user.hp - 5);
+            delete state.records[k];
+            playSound('untick');
+        } else {
+            // CHECK
+            state.records[k] = true; 
+            const streak = calculateIndividualStreak(id);
+            const multiplier = 1 + (Math.log(streak + 1) * 0.5); 
+            const xpGain = 10 * diff * multiplier;
+            state.user.xp += xpGain;
+            state.user.hp = Math.min(100, state.user.hp + 5);
+            playSound('tick', key); 
+        }
+        saveData(); renderGrid();
+    }
+
+    function addHabit() {
+        const val = document.getElementById('newHabitInput').value;
+        const diffVal = parseFloat(document.getElementById('newHabitDiff').value);
+        if(val) { 
+            state.habits.push({id:Date.now(), name:val, diff:diffVal}); 
+            document.getElementById('newHabitInput').value=''; 
+            saveData(); 
+            renderGrid(); 
+        }
+    }
+    
+    function delHabit(id) { if(confirm("Terminate Quest?")) { state.habits = state.habits.filter(h=>h.id!==id); saveData(); renderGrid(); } }
+
+    // --- CHARTS ---
+    function getWeekRange(dateString) {
+        const date = new Date(dateString);
+        const day = date.getDate();
+        const block = Math.ceil(day / 7);
+        const startDay = (block - 1) * 7 + 1;
+        const daysInMonth = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+        const endDay = Math.min(block * 7, daysInMonth);
+        return { start: startDay, end: endDay, year: date.getFullYear(), month: date.getMonth(), label: `WK ${block}` };
+    }
+
+    function renderStats() {
+        const styles = getComputedStyle(document.body);
+        const txtColor = state.isDark ? '#f8fafc' : '#1f2937';
+        const emptyColor = state.isDark ? '#1a1a24' : '#e2e8f0';
+        const successColor = styles.getPropertyValue('--success').trim();
+        const primaryColor = styles.getPropertyValue('--primary').trim();
+        const cardBg = styles.getPropertyValue('--surface').trim();
+        const borderColor = styles.getPropertyValue('--border').trim();
+
+        Chart.defaults.color = txtColor;
+        Chart.defaults.borderColor = borderColor;
+        Chart.defaults.font.family = 'monospace';
+        
+        const liquidAnim = { animateScale: false, animateRotate: true, duration: 1000, easing: 'easeOutQuart' };
+
+        // 1. Daily
+        let dayDone = 0;
+        state.habits.forEach(h => { if(state.records[`${h.id}_${activeDateKey}`]) dayDone++; });
+        document.getElementById('dailyText').innerText = `${dayDone}/${state.habits.length}`;
+        document.getElementById('dailyText').style.color = txtColor;
+        drawChart('dailyPie', 'doughnut', {
+            labels: ['Done', 'Left'],
+            datasets: [{
+                data: [dayDone, state.habits.length - dayDone],
+                backgroundColor: [successColor, emptyColor],
+                borderColor: cardBg, borderWidth: 2, circumference: 360, rotation: -90
+            }]
+        }, { cutout: '80%', animation: liquidAnim });
+
+        // 2. Weekly
+        const weekRange = getWeekRange(activeDateKey);
+        let weekDone = 0;
+        const totalPossible = ((weekRange.end - weekRange.start) + 1) * state.habits.length;
+        for(let d = weekRange.start; d <= weekRange.end; d++) {
+            const date = new Date(weekRange.year, weekRange.month, d);
+            const k = getDateKey(date);
+            state.habits.forEach(h => { if(state.records[`${h.id}_${k}`]) weekDone++; });
+        }
+        const weekPct = totalPossible > 0 ? Math.round((weekDone / totalPossible) * 100) : 0;
+        document.getElementById('weeklyText').innerText = `${weekPct}%`;
+        document.getElementById('weeklyText').style.color = txtColor;
+        drawChart('weeklyPie', 'doughnut', {
+            datasets: [{
+                data: [weekDone, totalPossible - weekDone],
+                backgroundColor: [primaryColor, emptyColor],
+                borderColor: cardBg, borderWidth: 2, circumference: 360, rotation: -90
+            }]
+        }, { cutout: '80%', animation: liquidAnim });
+
+        // 3. Bar
+        const lifetimeData = [];
+        const streakData = [];
+        state.habits.forEach(h => {
+            lifetimeData.push(calculateLifetimeTotal(h.id));
+            streakData.push(calculateIndividualStreak(h.id));
+        });
+        drawChart('barChart', 'bar', {
+            labels: state.habits.map(h=>h.name),
+            datasets: [
+                { label:'Lifetime', data:lifetimeData, backgroundColor:primaryColor, borderRadius:3 },
+                { label:'Streak', data:streakData, backgroundColor:successColor, borderRadius:3 }
+            ]
+        }, { 
+            maintainAspectRatio: false,
+            scales: { x: { display: true, ticks: { color: txtColor, autoSkip: false, maxRotation: 45, minRotation: 0, font: {size: 10} } }, y: { grid: { color: borderColor } } }, 
+            animation: { duration: 1000 },
+            plugins: { legend: { display: true, position:'top', labels: { boxWidth: 10, padding: 10, font: {size:10} } } }
+        });
+
+        // 4. Line
+        let lineChartVisibility = [];
+        if (charts.lineChart) {
+            lineChartVisibility = charts.lineChart.data.datasets.map((ds, i) => {
+                const meta = charts.lineChart.getDatasetMeta(i);
+                return meta.hidden !== null ? meta.hidden : ds.hidden;
+            });
+            charts.lineChart.destroy();
+        }
+        const lineLabels = [];
+        const datasets = [];
+        const range = chartDaysRange; 
+        for(let i=range-1; i>=0; i--) { 
+            const d = new Date(); d.setDate(d.getDate() - i); 
+            if(range > 30 && i % 5 !== 0) lineLabels.push(''); 
+            else lineLabels.push(d.getDate() + '/' + (d.getMonth()+1));
+        }
+        const colors = ['#f472b6', '#22d3ee', '#fbbf24', '#a78bfa', '#34d399'];
+        state.habits.forEach((h, index) => {
+            const dataPoints = [];
+            for(let i=range-1; i>=0; i--) {
+                const d = new Date(); d.setDate(d.getDate() - i);
+                let rollingSum = 0;
+                for(let r=0; r<7; r++) {
+                    const rd = new Date(d); rd.setDate(d.getDate() - r);
+                    if(state.records[`${h.id}_${getDateKey(rd)}`]) rollingSum++;
+                }
+                dataPoints.push((rollingSum/7)*100);
+            }
+            const wasHidden = lineChartVisibility.length > 0 && lineChartVisibility[index + 1] !== undefined ? lineChartVisibility[index + 1] : true;
+            datasets.push({ label: h.name, data: dataPoints, borderColor: colors[index % colors.length], backgroundColor: 'transparent', tension: 0.4, borderWidth: 2, pointRadius: 0, hidden: wasHidden });
+        });
+        
+        const overallData = [];
+        for(let i=range-1; i>=0; i--) {
+            const d = new Date(); d.setDate(d.getDate() - i);
+            let totalPossible = state.habits.length * 7;
+            let totalDone = 0;
+            for(let r=0; r<7; r++) {
+                const rd = new Date(d); rd.setDate(d.getDate() - r);
+                state.habits.forEach(h => { if(state.records[`${h.id}_${getDateKey(rd)}`]) totalDone++; });
+            }
+            overallData.push(totalPossible > 0 ? (totalDone/totalPossible)*100 : 0);
+        }
+        
+        const overallHidden = lineChartVisibility.length > 0 && lineChartVisibility[0] !== undefined ? lineChartVisibility[0] : false;
+        datasets.unshift({ label: 'SYSTEM AVG', data: overallData, borderColor: successColor, backgroundColor: 'rgba(0, 255, 157, 0.05)', fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0, hidden: overallHidden });
+        
+        const lineCtx = document.getElementById('lineChart').getContext('2d');
+        charts.lineChart = new Chart(lineCtx, {
+            type: 'line', data: { labels: lineLabels, datasets: datasets },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: { x: { display: false }, y: { min:0, max:100, grid: { color: borderColor } } }, 
+                animation: { duration: 0 }, 
+                plugins: { legend: { display: true, labels: { color: txtColor, usePointStyle:true, boxWidth:6, font:{size:10} } }, tooltip: { mode: 'index', intersect: false } } 
+            }
+        });
+    }
+
+    function drawChart(id, type, data, opts={}) {
+        if(charts[id]) charts[id].destroy();
+        const ctx = document.getElementById(id).getContext('2d');
+        charts[id] = new Chart(ctx, {
+            type: type, data: data,
+            options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, ...opts }
+        });
+    }
+
+    function renderHeatmap() {
+        const div = document.getElementById('heatmap');
+        div.innerHTML = '';
+        const year = currentDate.getFullYear();
+        for(let i=0; i<365; i++) {
+            const d = new Date(year, 0, i+1);
+            const k = getDateKey(d);
+            let c=0; state.habits.forEach(h => { if(state.records[`${h.id}_${k}`]) c++; });
+            let l=0; 
+            if(c>0) {
+                const r = c/state.habits.length;
+                if(r<0.25) l=1; else if(r<0.5) l=2; else if(r<0.75) l=3; else l=4;
+            }
+            const el = document.createElement('div');
+            el.className = 'heat-cell';
+            el.setAttribute('data-l', l);
+            el.title = `${k}: ${c}`;
+            div.appendChild(el);
+        }
+    }
+
+    init();
+</script>
+</body>
+</html>

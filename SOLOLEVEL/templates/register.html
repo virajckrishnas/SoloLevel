@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Register - SOLOLEVEL</title>
+    <style>
+        body { background: #050505; color: #7000ff; font-family: monospace; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .card { background: #0a0a0f; padding: 40px; border: 1px solid #1f293a; border-radius: 12px; width: 300px; text-align: center; box-shadow: 0 0 20px rgba(112, 0, 255, 0.1); }
+        h2 { margin-bottom: 20px; letter-spacing: 2px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; background: #12121a; border: 1px solid #1f293a; color: white; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #7000ff; color: white; border: none; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        button:hover { box-shadow: 0 0 10px #7000ff; }
+        a { color: #555; font-size: 0.8rem; text-decoration: none; display: block; margin-top: 15px; }
+        .flash { color: #ff0055; font-size: 0.8rem; margin-bottom: 10px; }
+        .warning { color: #ff0055; font-size: 0.7rem; margin-top: 15px; font-weight: bold; border: 1px solid #ff0055; padding: 10px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>NEW PLAYER</h2>
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}<div class="flash">{{ messages[0] }}</div>{% endif %}
+        {% endwith %}
+        <form method="POST">
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="password" name="password" placeholder="Password" required>
+            <button type="submit">INITIALIZE</button>
+        </form>
+        <div class="warning">WARNING: IF YOU FORGET YOUR NAME OR PASSWORD, IT IS GONE FOREVER.</div>
+        <a href="{{ url_for('login') }}">Return to Login</a>
+    </div>
+</body>
+</html>
